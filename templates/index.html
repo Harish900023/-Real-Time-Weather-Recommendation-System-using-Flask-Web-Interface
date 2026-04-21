@@ -1,0 +1,2394 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherAI - Smart Environmental Intelligence</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root[data-theme="dark"] {
+            --bg-main: #020617;
+            --bg-card: rgba(15, 23, 42, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(15, 23, 42, 0.3);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --input-bg: rgba(255, 255, 255, 0.03);
+            --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.4);
+            --nexus-glow: rgba(6, 182, 212, 0.2);
+        }
+
+        :root[data-theme="light"] {
+            --bg-main: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.6);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent-blue: #2563eb;
+            --accent-cyan: #0891b2;
+            --accent-glow: rgba(37, 99, 235, 0.1);
+            --border-subtle: rgba(15, 23, 42, 0.05);
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --input-bg: #ffffff;
+            --shadow-premium: 0 10px 40px rgba(15, 23, 42, 0.08);
+            --nexus-glow: rgba(37, 99, 235, 0.1);
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg-main);
+            color: var(--text-main); 
+            margin: 0; padding: 0; 
+            overflow-x: hidden; 
+            transition: background 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+            perspective: 1200px; /* Spatial Depth Foundation */
+        }
+
+        /* Nexus Particles Layer */
+        #nexusParticles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none; opacity: 0.6;
+        }
+
+        /* Interactive Spatial Grid */
+        .nexus-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 30px;
+            padding: 40px;
+            transform-style: preserve-3d;
+            perspective: 2000px;
+        }
+
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 20px 50px; background: transparent; 
+            border-bottom: 1px solid var(--border-subtle); 
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        /* Holographic Widget Style (Replacing Card) */
+        .widget { 
+            background: var(--bg-card); 
+            backdrop-filter: blur(35px) saturate(200%);
+            border: 1px solid var(--border-subtle); 
+            border-radius: 24px; padding: 30px; 
+            box-shadow: var(--shadow-premium), inset 0 0 20px var(--nexus-glow);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            transform-style: preserve-3d;
+            will-change: transform, box-shadow;
+        }
+        .widget:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 0 0 30px var(--accent-glow);
+        }
+
+        .widget-content {
+            transform: translateZ(30px);
+            transition: transform 0.4s ease;
+        }
+        .widget:hover .widget-content { transform: translateZ(50px); }
+
+        /* Environmental Pulse Sidebar */
+        .pulse-sidebar {
+            position: fixed; right: -400px; top: 0; width: 400px; height: 100vh;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(40px);
+            border-left: 1px solid var(--border-subtle);
+            z-index: 1000;
+            padding: 30px;
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; gap: 25px;
+        }
+        .pulse-sidebar.active { right: 0; }
+        .pulse-toggle {
+            position: absolute; left: -50px; top: 50%; transform: translateY(-50%);
+            width: 50px; height: 60px; background: var(--accent-blue);
+            color: white; display: flex; align-items: center; justify-content: center;
+            border-radius: 12px 0 0 12px; cursor: pointer;
+            box-shadow: -5px 0 20px var(--accent-glow);
+            font-size: 1.2rem;
+        }
+
+        .pulse-score-card {
+            background: rgba(255,255,255,0.05); padding: 25px; border-radius: 20px;
+            text-align: center; border: 1px solid var(--border-subtle);
+        }
+        .pulse-score-val { font-size: 3rem; font-weight: bold; background: linear-gradient(90deg, #ec4899, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .pulse-insight {
+            padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03);
+            border-left: 4px solid var(--accent-blue); font-size: 0.9rem;
+            animation: slideInRight 0.5s ease forwards;
+        }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2); border-color: var(--accent-blue); }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .metric-box { 
+            background: rgba(255, 255, 255, 0.03); 
+            border-radius: 15px; padding: 18px; 
+            display: flex; align-items: center; gap: 15px; 
+            border: 1px solid var(--border-subtle); 
+            transition: all 0.3s ease;
+        }
+        .metric-box:hover { background: rgba(255, 255, 255, 0.08); transform: scale(1.02); }
+        .metric-box i { animation: floating 3s ease-in-out infinite; }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Liquid Style Assistant Orb */
+        .assistant-sphere { 
+            width: 140px; height: 140px; border-radius: 50%; 
+            background: linear-gradient(135deg, #3b82f6, #06b6d4, #a855f7);
+            background-size: 200% 200%;
+            animation: liquidFlow 6s ease-in-out infinite, gradientBG 4s ease infinite; 
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+            display: flex; align-items: center; justify-content: center; 
+            color: white; font-weight: bold; cursor: pointer; 
+            position: absolute; z-index: 10; border: none;
+        }
+
+        @keyframes liquidFlow {
+            0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .brand { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: bold; }
+        .brand i { color: var(--accent-blue); }
+        .brand span { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .nav-links { display: flex; gap: 5px; }
+        .nav-btn { background: transparent; color: var(--text-muted); border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: 0.3s ease; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+        .nav-btn:hover, .nav-btn.active { background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); box-shadow: 0 0 15px var(--accent-glow); }
+        .theme-btn { font-size: 1.2rem; cursor: pointer; color: var(--text-muted); background: none; border: none; padding: 5px 10px; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .theme-btn:hover { color: var(--accent-blue); transform: rotate(15deg); }
+
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        
+        .section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 25px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); transition: 0.3s ease; }
+        
+        select.glass-input {
+    background-color: var(--input-bg);
+    color: var(--text-main);
+}
+
+/* Target the dropdown options specifically */
+        .glass-input option {
+            background-color: #1a1a1a; /* Replace with your specific dark hex or var(--bg-dark) */
+            color: var(--text-main);
+        }
+
+        /* Remove default appearance in some browsers to force custom styling */
+        .glass-input {
+            appearance: none; 
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }.glass-input { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-subtle); padding: 14px 20px; border-radius: 10px; width: 100%; margin-bottom: 15px; font-size: 1rem; box-sizing: border-box; transition: 0.3s; }
+                .glass-input:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 8px var(--accent-glow); }
+                
+        .btn-primary { background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan)); color: white; border: none; padding: 14px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; width: 100%; transition: 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent-glow); }
+        .btn-secondary { background: transparent; color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 14px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; width: 100%; transition: 0.3s; }
+        .btn-secondary:hover { background: rgba(59, 130, 246, 0.1); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.3s;}
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; display: inline-block; }
+        .badge.good { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+        .badge.moderate { background: rgba(234, 179, 8, 0.2); color: var(--warning); }
+        .badge.bad { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        
+        .auth-container { max-width: 450px; margin: 0 auto; text-align: center; }
+        .auth-container h2 { margin-bottom: 25px; }
+        .auth-toggle { font-size: 0.9rem; color: var(--text-muted); margin-top: 20px; }
+        .auth-toggle span { color: var(--accent-blue); cursor: pointer; font-weight: bold; }
+        .auth-toggle span:hover { text-decoration: underline; }
+        #authMsg { margin-top: 15px; font-weight: bold; min-height: 20px; }
+        
+        /* Modern Modal Styling */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 2000; align-items: center; justify-content: center; opacity: 0; transition: 0.3s ease; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-card { width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
+        .modal-card.wide { max-width: 750px; }
+
+        /* Guide Styling */
+        .guide-step { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-subtle); }
+        .guide-step:last-child { border-bottom: none; }
+        .guide-title { font-weight: bold; color: var(--accent-blue); display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .guide-code { background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; font-family: monospace; display: block; margin: 5px 0; color: var(--accent-cyan); overflow-x: auto; }
+
+        /* Security Input Styling */
+        .password-wrapper { position: relative; width: 100%; }
+        .password-toggle-btn { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); transition: 0.3s; z-index: 5; }
+        .password-toggle-btn:hover { color: var(--accent-blue); }
+        .sensitive-locked { opacity: 0.5; filter: blur(3px); pointer-events: none; }
+        .lock-badge { font-size: 0.75rem; background: var(--bg-main); padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; border: 1px solid var(--border-subtle); color: var(--text-muted); }
+        .lock-badge:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+
+        /* Advanced Notification System */
+        #toastContainer { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { pointer-events: auto; min-width: 300px; padding: 16px 20px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 15px; animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; position: relative; overflow: hidden; }
+        .toast::before { content: ""; position: absolute; left: 0; top: 0; height: 100%; width: 5px; background: var(--accent-blue); }
+        .toast.success::before { background: var(--success); }
+        .toast.error::before { background: var(--danger); }
+        .toast.warning::before { background: var(--warning); }
+        .toast.exit { animation: slideOut 0.3s ease forwards; }
+        @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+        
+        .field-guide-trigger { cursor: pointer; color: var(--warning); margin-left: 8px; transition: 0.3s; font-size: 0.9rem; }
+        .field-guide-trigger:hover { color: var(--accent-cyan); transform: scale(1.2); }
+        
+        .hero { text-align: center; margin-bottom: 40px; }
+        .hero h1 { font-size: 3.5rem; margin: 10px 0; background: linear-gradient(90deg, #60a5fa, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+        
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+        .weather-display-card { display: flex; flex-direction: column; justify-content: space-between; }
+        .weather-hero { display: flex; justify-content: space-between; align-items: center; }
+        .temp-huge { font-size: 4.5rem; font-weight: bold; margin: 10px 0; background: linear-gradient(180deg, var(--text-main), var(--text-muted)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .metric-box { background: var(--bg-main); border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--border-subtle); }
+        .metric-box i { font-size: 1.5rem; color: var(--accent-cyan); }
+        
+        .recs-list { list-style: none; padding: 0; }
+        .recs-list li { padding: 15px; background: var(--bg-main); margin-bottom: 10px; border-radius: 8px; border-left: 4px solid var(--accent-blue); display: flex; align-items: center; gap: 15px; border: 1px solid var(--border-subtle); }
+        
+        .chat-container { display: flex; flex-direction: column; height: 600px; }
+        .chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; background: var(--bg-main); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 20px; }
+        
+        .chat-input-area { display: flex; gap: 10px; }
+        .chat-input-area input { margin-bottom: 0; }
+        .chat-input-area button { width: auto; padding: 0 30px; }
+
+        /* Chat Avatars */
+        .msg-wrapper { display: flex; gap: 12px; align-items: flex-end; width: 100%; margin-bottom: 5px; }
+        .msg-wrapper.user { flex-direction: row-reverse; }
+        .chat-avatar { width: 35px; height: 35px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; color: white; border: 2px solid var(--border-subtle); overflow: hidden; background: var(--bg-card); }
+        .chat-avatar.user-av { background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan)); }
+        .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .msg { max-width: 70%; padding: 12px 18px; border-radius: 18px; line-height: 1.5; font-size: 0.95rem; }
+        /* Phase 1: Identity Enhancements */
+        .bio-sync-header {
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            padding: 10px; color: white; font-size: 0.8rem; text-align: center;
+            border-radius: 0 0 15px 15px; margin-bottom: 20px;
+            display: none; box-shadow: 0 5px 15px var(--accent-glow);
+            animation: slideDown 0.5s ease;
+        }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        .role-preview-card {
+            background: rgba(255,255,255,0.05); border: 1px dashed var(--accent-cyan);
+            border-radius: 12px; padding: 10px; margin-top: 10px; font-size: 0.8rem;
+            display: none; animation: fadeIn 0.3s ease;
+        }
+
+        /* Phase 2: Hub Enhancements */
+        .chronos-slider-container {
+            margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2);
+            border-radius: 15px; border: 1px solid var(--border-subtle);
+        }
+        input[type="range"].chronos-range {
+            width: 100%; cursor: pointer; accent-color: var(--accent-blue);
+        }
+
+        .aura-glow {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 200px; height: 200px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            z-index: -1; filter: blur(40px); opacity: 0.4; transition: all 1.5s ease;
+        }
+
+        /* Phase 3: AI Logic Enhancements */
+        .flash-card-rail { 
+            display: flex; gap: 10px; overflow-x: auto; padding: 10px 0;
+            scrollbar-width: none;
+        }
+        .flash-card {
+            min-width: 140px; background: var(--bg-card); padding: 12px; border-radius: 12px;
+            border: 1px solid var(--border-subtle); display: flex; flex-direction: column;
+            gap: 5px; font-size: 0.75rem; cursor: pointer; transition: 0.3s;
+        }
+        .flash-card:hover { transform: scale(1.05); border-color: var(--accent-blue); }
+
+        .pin-btn {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            padding: 5px; margin-left: 10px; font-size: 0.8rem;
+        }
+        .pin-btn.active { color: var(--warning); }
+
+        /* Phase 4: Vocal Enhancements */
+        .persona-toggle-area {
+            margin-top: 20px; display: flex; justify-content: center; gap: 15px;
+        }
+        .persona-chip {
+            padding: 8px 15px; border-radius: 20px; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-subtle); font-size: 0.8rem; cursor: pointer;
+        }
+        .persona-chip.active { background: var(--accent-blue); color: white; border-color: transparent; }
+
+        /* Phase 5: Core Enhancements */
+        .health-gauge-container {
+            display: flex; gap: 15px; margin-top: 15px;
+        }
+        .health-gauge {
+            flex: 1; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px;
+            text-align: center; border: 1px solid var(--border-subtle);
+        }
+        .health-bar { height: 4px; width: 100%; background: #333; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+        .health-fill { height: 100%; background: var(--success); width: 100%; }
+
+        /* Typing Indicator */
+        .typing-indicator { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; }
+        .typing-indicator span { width: 6px; height: 6px; background-color: var(--accent-cyan); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+        .msg.bot { background: var(--bg-card); border: 1px solid var(--border-subtle); border-bottom-left-radius: 2px; position: relative; }
+        .msg.bot h1, .msg.bot h2, .msg.bot h3 { margin-top: 5px; margin-bottom: 5px; color: var(--accent-cyan); font-size: 1.1rem; }
+        .msg.bot ul, .msg.bot ol { padding-left: 20px; margin: 5px 0; }
+        .msg.bot li { margin-bottom: 3px; }
+        .msg.bot p { margin: 5px 0; }
+        .msg.bot strong { color: var(--accent-blue); }
+        .msg.user { background: var(--accent-blue); color: white; border-bottom-right-radius: 2px; }
+        
+        .voice-container { text-align: center; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 550px; position: relative; background: radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, transparent 70%); }
+        
+        /* Central Wrapper for perfect centering */
+        .sphere-context { position: relative; width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; outline: none; }
+
+        .assistant-sphere { width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #3b82f6, #06b6d4); 
+            box-shadow: 0 0 20px #3b82f6, 0 0 40px rgba(59,130,246,0.5), inset 0 0 20px rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.3s ease; position: absolute; z-index: 10; border: 4px solid rgba(255,255,255,0.2); background-size: cover; background-position: center; }
+        .assistant-sphere:hover { transform: scale(1.05); }
+
+        .listening .assistant-sphere { background-image: url('/templates/GOOD%20GIF.gif'); color: transparent; border-color: var(--accent-blue); animation: pulse 1.5s infinite; }
+        .speaking .assistant-sphere { background-image: url('/templates/Artificial%20Intelligence%20design.gif'); color: transparent; border-color: var(--accent-cyan); animation: pulseStrong 0.8s infinite; }
+
+        #voiceCanvas { position: absolute; top: 0; left: 0; width: 300px; height: 300px; pointer-events: none; z-index: 5; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 20px #3b82f6; } 50% { box-shadow: 0 0 40px #06b6d4; } 100% { box-shadow: 0 0 20px #3b82f6; } }
+        @keyframes pulseStrong { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+        #voiceStatus { font-weight:bold; height:20px; color:var(--accent-blue); z-index:20; position:relative; margin-top: 20px; font-size: 0.9rem; letter-spacing: 1px; }
+
+        /* Response Styling */
+        .voice-response { max-width: 600px; width: 100%; text-align: center; min-height: 80px; padding: 25px; border-radius: 16px; background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-subtle); box-shadow: 0 15px 45px rgba(0,0,0,0.1); z-index: 20; position: relative; }
+
+        #voiceAiText { font-size: 1.15rem; line-height: 1.6; color: var(--text-main); font-weight: 500; }
+        .voice-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 3px; color: var(--accent-blue); font-weight: bold; margin-bottom: 10px; }
+
+        /* Multi-City & Risk UI */
+        .city-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 20px; }
+        .city-mini-card { background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.3s; position: relative; }
+        .city-mini-card:hover { transform: translateY(-5px); border-color: var(--accent-blue); box-shadow: 0 5px 15px var(--accent-glow); }
+        .city-mini-card.active { border-color: var(--accent-cyan); background: rgba(6, 182, 212, 0.05); }
+        .risk-bar-container { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin: 10px 0; overflow: hidden; }
+        .risk-bar-fill { height: 100%; transition: 0.5s ease-out; }
+        .offline-badge { display: none; background: var(--danger); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; position: absolute; top: 10px; right: 10px; }
+
+        /* Profile Layout */
+        .profile-header { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .profile-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan)); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; border: 4px solid var(--bg-card); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .profile-info { width: 100%; border-top: 1px solid var(--border-subtle); padding-top: 20px; text-align: left; }
+        .profile-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.95rem; }
+        .profile-row:last-child { border-bottom: none; }
+        .profile-label { color: var(--text-muted); font-weight: 500; }
+        .profile-value { color: var(--text-main); font-weight: bold; }
+
+        @media(max-width: 768px){ .dashboard-grid { grid-template-columns: 1fr; } .nav-links span { display: none; } }
+    </style>
+</head>
+<body>
+    <canvas id="nexusParticles"></canvas>
+
+    <div class="pulse-sidebar" id="pulseSidebar">
+        <div class="pulse-toggle" id="pulseToggle">
+            <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div class="sidebar-header">
+            <h3 style="margin:0; display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-earth-asia" style="color:var(--accent-blue)"></i> Nature's Pulse
+            </h3>
+            <p style="color:var(--text-muted); font-size:0.8rem; margin:5px 0 0;">Global Intelligence Sync</p>
+        </div>
+
+        <div class="pulse-score-card">
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px;">ENVIRONMENTAL SAFETY</p>
+            <div class="pulse-score-val" id="sidebarRisk">-</div>
+            <p style="font-size:0.9rem; margin-top:5px;" id="sidebarVerdict">-</p>
+        </div>
+
+        <div id="sidebarInsights" style="display:flex; flex-direction:column; gap:12px; overflow-y:auto; flex:1;">
+            <p style="text-align:center; color:var(--text-muted); margin-top:40px;">No city data synced.</p>
+        </div>
+
+        <div style="font-size:0.7rem; color:var(--text-muted); text-align:center; border-top:1px solid var(--border-subtle); padding-top:10px;">
+            © 2026 WeatherAI Nexus Engine
+        </div>
+    </div>
+
+    <header>
+        <div class="brand"><i class="fa-solid fa-cloud-bolt"></i><span>WeatherAI <b>Nexus</b></span></div>
+        <div class="nav-links">
+            <button class="nav-btn" data-target="dashboard" id="navDashboard" style="display:none;"><i class="fa-solid fa-cube"></i> <span>Nexus Hub</span></button>
+            <button class="nav-btn" data-target="chat" id="navChat" style="display:none;"><i class="fa-solid fa-message"></i> <span>AI Logic</span></button>
+            <button class="nav-btn" data-target="voice" id="navVoice" style="display:none;"><i class="fa-solid fa-microphone"></i> <span>Vocal Sync</span></button>
+            <button class="nav-btn" data-target="settings" id="navSettings" style="display:none;"><i class="fa-solid fa-gear"></i> <span>Nexus Core</span></button>
+            <button class="nav-btn active" data-target="auth" id="navAuth"><i class="fa-solid fa-user"></i> <span>Profile</span></button>
+            <button class="theme-btn" id="themeToggle"><i class="fa-solid fa-moon"></i></button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- AUTH SECTION -->
+        <section id="auth" class="section active">
+            
+            <!-- Login Form -->
+            <div class="bio-sync-header" id="bioSyncHeader">
+                <i class="fa-solid fa-location-arrow"></i> Bio-Sync Detected: <b><span id="bioLocation">...</span></b> | <span id="bioWeather">...</span>
+            </div>
+
+            <div class="card auth-container" id="loginFormCard">
+                <h2><i class="fa-solid fa-right-to-bracket" style="color:var(--accent-blue);"></i> Welcome Back</h2>
+                <input type="email" id="loginEmail" class="glass-input" placeholder="Email Address">
+                
+                <div class="password-wrapper">
+                    <input type="password" id="loginPassword" class="glass-input" placeholder="Password">
+                    <i class="fa-solid fa-eye password-toggle-btn" onclick="togglePassVisibility('loginPassword', this)"></i>
+                </div>
+
+                <div style="text-align: right; margin-top: -10px; margin-bottom: 15px;">
+                    <span id="btnForgotPass" style="font-size: 0.8rem; color: var(--accent-blue); cursor: pointer;">Forgot Password?</span>
+                </div>
+
+                <button class="btn-primary" id="btnDoLogin">Login</button>
+                <div class="auth-toggle">New to WeatherAI? <span id="btnGoSignup">Create an account</span></div>
+                <div id="loginErrorMsg" style="color:var(--danger); margin-top:10px; font-weight:bold;"></div>
+            </div>
+
+            <!-- Signup Form -->
+            <div class="card auth-container" id="signupFormCard" style="display:none;">
+                <h2><i class="fa-solid fa-user-plus" style="color:var(--accent-cyan);"></i> Create Account</h2>
+                <input type="text" id="signupUsername" class="glass-input" placeholder="Username">
+                <input type="email" id="signupEmail" class="glass-input" placeholder="Email Address">
+                
+                <div class="password-wrapper">
+                    <input type="password" id="signupPassword" class="glass-input" placeholder="Password (Min 8 Chars)">
+                    <i class="fa-solid fa-eye password-toggle-btn" onclick="togglePassVisibility('signupPassword', this)"></i>
+                </div>
+
+                <div class="password-wrapper">
+                    <input type="password" id="signupConfirmPassword" class="glass-input" placeholder="Confirm Password">
+                    <i class="fa-solid fa-eye password-toggle-btn" onclick="togglePassVisibility('signupConfirmPassword', this)"></i>
+                </div>
+                
+                <div style="text-align: left; margin: 15px 0;">
+                    <select id="signupUsertype" class="glass-input" style="margin-bottom:0;">
+                        <option value="" disabled selected>Select User Role</option>
+                        <option value="general">General User</option>
+                        <option value="farmer">Farmer</option>
+                        <option value="traveler">Traveler</option>
+                        <option value="student">Student</option>
+                        <option value="sports">Sports Enthusiast</option>
+                        <option value="trekking">Trekking Explorer</option>
+                    </select>
+                    <div class="role-preview-card" id="rolePreview">
+                        <i class="fa-solid fa-wand-sparkles"></i> <span id="rolePreviewText">Select a role to see AI perks.</span>
+                    </div>
+                </div>
+
+                <p style="font-size:0.85rem; color:var(--text-muted); text-align:left; margin-bottom:5px;">Optional Telegram Alerts:</p>
+                <input type="text" id="signupToken" class="glass-input" placeholder="Telegram Bot Token">
+                <input type="text" id="signupChatid" class="glass-input" placeholder="Telegram Chat ID">
+                
+                <button class="btn-primary" id="btnDoSignup">Create Account</button>
+                <div class="auth-toggle">Already have an account? <span id="btnGoLogin">Login here</span></div>
+                <div id="signupErrorMsg" style="color:var(--danger); margin-top:10px; font-weight:bold;"></div>
+            </div>
+            
+            <div class="card auth-container" id="loggedInCard" style="display:none; max-width: 500px;">
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profAvatar">U</div>
+                    <div style="text-align: center;">
+                        <h2 id="profUser" style="margin:0;">User Name</h2>
+                        <div id="profEmail" style="color:var(--text-muted); font-size:0.9rem;">user@example.com</div>
+                    </div>
+                </div>
+
+                <div class="profile-info">
+                    <div class="profile-row">
+                        <span class="profile-label"><i class="fa-solid fa-user-tag"></i> User ID</span>
+                        <span class="profile-value" id="profUid" style="font-size:0.7rem; color:var(--text-muted);">--</span>
+                    </div>
+                    <div class="profile-row">
+                        <span class="profile-label"><i class="fa-solid fa-briefcase"></i> Active Role</span>
+                        <span class="profile-value" id="profRole">General</span>
+                    </div>
+                    <div class="profile-row">
+                        <span class="profile-label"><i class="fa-solid fa-calendar-check"></i> Account Status</span>
+                        <span class="profile-value" style="color:var(--success);"><i class="fa-solid fa-circle-check"></i> Verified</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:25px; display:flex; gap:10px;">
+                    <button class="btn-secondary" id="btnGoDashboardFromAuth">Dashboard</button>
+                    <button class="btn-primary" id="btnGoSettingsFromAuth">Settings</button>
+                </div>
+                <button class="btn-danger" id="btnLogout" style="margin-top:15px; width:100%;">Sign Out</button>
+            </div>
+        </section>
+
+        <!-- DASHBOARD SECTION -->
+        <section id="dashboard" class="section">
+            <div class="hero">
+                <div style="display:inline-flex; align-items:center; gap:10px; background:rgba(59, 130, 246, 0.1); padding:8px 20px; border-radius:30px; color:var(--accent-cyan); font-weight:bold; margin-bottom:15px; border:1px solid var(--border-subtle);">
+                    <i class="fa-solid fa-bolt"></i> AI-Powered Environment Intelligence
+                </div>
+                <h1>Environmental Nexus</h1>
+                <p style="color:var(--text-muted); max-width:600px; margin:0 auto 30px;">
+                    Search coordinates to initialize the spatial intelligence grid. Hover to interact with real-time data orbs.
+                </p>
+                <div style="max-width:500px; margin:0 auto; display:flex; gap:10px;">
+                    <input type="text" id="citySearch" class="glass-input" placeholder="Search global nexus..." style="margin-bottom:0;">
+                    <button class="btn-primary" style="width:auto; padding:10px 20px; display:inline-flex; align-items:center; justify-content:center; gap:8px;" id="btnFetchWeather">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+                <div id="weatherStatusMsg" style="margin-top:10px; font-weight:bold;"></div>
+                
+                <div id="multiCityArea" style="margin-top: 30px; text-align: left;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="margin:0;"><i class="fa-solid fa-layer-group"></i> Active Orbs</h4>
+                        <button class="lock-badge" id="btnAddCity" style="border:none; cursor:pointer;"><i class="fa-solid fa-plus"></i> Map Current</button>
+                    </div>
+                    <div class="city-grid" id="cityList">
+                        <!-- Dynamic city cards -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="nexus-grid" id="dashboardContent" style="display:none;">
+                <div class="widget weather-display-card" id="mainWidget" style="grid-column: 1 / 2; grid-row: 1 / 3;">
+                    <div class="widget-content">
+                        <div class="aura-glow" id="widgetAura"></div>
+                        <div class="offline-badge" id="offlineIndicator">OFFLINE MODE</div>
+                        <div class="weather-hero">
+                            <div>
+                                <h3 id="h3RiskStatus" style="margin-bottom: 5px; font-size: 0.9rem; color: var(--accent-cyan);">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Intelligence Verdict
+                                </h3>
+                                <h2 id="dispCity" style="margin:0; font-size: 2rem;">--</h2>
+                                <div id="dispDesc" style="color:var(--text-muted); text-transform:capitalize; font-size: 1.1rem;">--</div>
+                            </div>
+                            <div id="dispBadge" class="badge">--</div>
+                        </div>
+                        <div class="temp-huge"><span id="dispTemp">--</span>°C</div>
+                        
+                        <div style="margin: 25px 0;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:10px;">
+                                <span>Risk Assessment Probability</span>
+                                <span id="riskValue">0%</span>
+                            </div>
+                            <div class="risk-bar-container">
+                                <div id="riskBar" class="risk-bar-fill" style="width: 0%; background: var(--success);"></div>
+                            </div>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-box"><i class="fa-solid fa-droplet" style="color:var(--accent-cyan);"></i><div><div style="font-size:0.8rem; color:var(--text-muted);">Humidity</div><strong id="dispHum">--%</strong></div></div>
+                            <div class="metric-box"><i class="fa-solid fa-wind" style="color:var(--accent-cyan);"></i><div><div style="font-size:0.8rem; color:var(--text-muted);">Wind Vector</div><strong id="dispWind">-- km/h</strong></div></div>
+                            <div class="metric-box"><i class="fa-solid fa-lungs" style="color:var(--success);"></i><div><div style="font-size:0.8rem; color:var(--text-muted);">Air Quality (AQI)</div><strong id="dispAqi">--</strong></div></div>
+                            <div class="metric-box"><i class="fa-solid fa-smog" style="color:var(--warning);"></i><div><div style="font-size:0.8rem; color:var(--text-muted);">PM 2.5</div><strong id="dispPm25">-- μg/m³</strong></div></div>
+                        </div>
+
+                        <!-- Chronos Time Slider -->
+                        <div class="chronos-slider-container">
+                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:10px; color:var(--accent-blue);">
+                                <span><i class="fa-solid fa-clock-rotate-left"></i> 24h CHRONOS PULSE</span>
+                                <span id="chronosLabel">NOW</span>
+                            </div>
+                            <input type="range" class="chronos-range" id="chronosRange" min="0" max="8" step="1" value="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="widget" style="grid-column: 2; grid-row: 1;">
+                    <div class="widget-content">
+                        <h3 id="h3TempTrend" style="margin-top:0;"><i class="fa-solid fa-chart-line" style="color:var(--accent-blue);"></i> Thermal Sequence</h3>
+                        <canvas id="weatherChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="widget" style="grid-column: 2; grid-row: 2;">
+                    <div class="widget-content">
+                        <h3 id="h3HumWindTrend" style="margin-top:0;"><i class="fa-solid fa-wind" style="color:var(--accent-cyan);"></i> Atmos Vectors</h3>
+                        <canvas id="weatherChartHumWind"></canvas>
+                    </div>
+                </div>
+
+                <div class="widget" style="grid-column: 1; grid-row: 3;">
+                    <div class="widget-content">
+                        <h3 id="h3MLVerdict" style="margin-top:0;"><i class="fa-solid fa-braille" style="color:var(--accent-cyan);"></i> Intelligence Analysis</h3>
+                        <p><strong>RF Verdict:</strong> <span id="dispAi" style="color:var(--accent-blue);">--</span></p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <h4 id="h3PersonalRecs" style="margin: 0; font-size:0.9rem;">Strategic Insight</h4>
+                            <button class="lock-badge" id="btnTelegramRecs" style="border: none; cursor:pointer; font-size:0.75rem;">
+                                <i class="fa-solid fa-paper-plane"></i> Broadcast
+                            </button>
+                        </div>
+                        <ul class="recs-list" id="dispRecs"><li>Initializing...</li></ul>
+                    </div>
+                </div>
+
+                <div class="widget" style="grid-column: 2; grid-row: 3;">
+                    <div class="widget-content">
+                        <h3 style="margin-top:0;"><i class="fa-solid fa-map-location-dot" style="color:var(--accent-cyan);"></i> Spatial Radar</h3>
+                        <div id="weatherMap" style="height: 250px; border-radius: 12px; background: #111; z-index: 1;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI CHAT SECTION -->
+        <section id="chat" class="section">
+            <div class="card chat-container">
+                <div style="text-align:center; padding-bottom:15px; border-bottom:1px solid var(--border-subtle);">
+                    <h2><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent-cyan);"></i> Welcome to WeatherAI Chatbot</h2>
+                    <p style="color:var(--text-muted); margin:0;">Powered by multi-domain intelligence</p>
+                </div>
+                <div class="flash-card-rail" id="suggestedCards">
+                    <!-- Dynamic suggested actions -->
+                </div>
+
+                <div class="chat-box" id="chatBox">
+                    <div class="msg bot">
+                        👋 <b>Hello! I'm your AI Weather Assistant.</b><br>Try asking things like:<br>• "Is it safe to go hiking?"<br>• "What should I pack?"
+                        <i class="fa-solid fa-bookmark pin-btn" onclick="pinMessage(this, 'Welcome message')"></i>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" class="glass-input" placeholder="Ask about weather, safety, or activity impacts...">
+                    <button class="btn-primary" id="btnSendChat"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VOICE SECTION -->
+        <section id="voice" class="section">
+            <div id="voiceUI" class="voice-container">
+                
+                <div class="sphere-context">
+                    <!-- Modern Canvas Visualizer -->
+                    <canvas id="voiceCanvas" width="300" height="300"></canvas>
+
+                    <!-- Assistant Orb -->
+                    <div class="assistant-sphere" id="assistantOrb">
+                        Assistant
+                    </div>
+                </div>
+
+                <div class="persona-toggle-area">
+                    <div class="persona-chip active" data-persona="casual" onclick="setPersona('casual')">
+                        <i class="fa-solid fa-mug-hot"></i> Casual
+                    </div>
+                    <div class="persona-chip" data-persona="pro" onclick="setPersona('pro')">
+                        <i class="fa-solid fa-shield-halved"></i> Safety Officer
+                    </div>
+                    <div class="persona-chip" data-persona="sci" onclick="setPersona('sci')">
+                        <i class="fa-solid fa-vial"></i> Scientist
+                    </div>
+                </div>
+
+                <div id="voiceStatus"></div>
+                
+                <div class="voice-response">
+                    <div class="voice-label">System Transcript</div>
+                    <div id="voiceAiText">"Awaiting environmental query. Tap the sphere to engage."</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS SECTION -->
+        <section id="settings" class="section">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <h2><i class="fa-solid fa-sliders" style="color:var(--accent-cyan);"></i> Account Preferences</h2>
+                <p style="color:var(--text-muted); margin-bottom: 25px;">Update your role profile and notification preferences.</p>
+                
+                <h4 style="margin-bottom:10px; color:var(--text-main);">User Role</h4>
+                <select id="settingsUsertype" class="glass-input">
+                    <option value="general">General User</option>
+                    <option value="farmer">Farmer</option>
+                    <option value="traveler">Traveler</option>
+                    <option value="student">Student</option>
+                    <option value="sports">Sports Enthusiast</option>
+                    <option value="trekking">Trekking Explorer</option>
+                </select>
+
+                <h4 style="margin: 20px 0 10px; color:var(--text-main);">System Language</h4>
+                <select id="settingsLang" class="glass-input">
+                    <option value="en">English (US)</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                    <option value="te">తెలుగు (Telugu)</option>
+                </select>
+
+                <h4 style="margin-bottom:10px; color:var(--text-main); display:flex; justify-content:space-between; align-items:center;">
+                    Keys & Integrations
+                    <span class="lock-badge" id="btnUnlockSensitive"><i class="fa-solid fa-lock"></i> Unlock to View/Edit</span>
+                </h4>
+                
+                <div id="sensitiveArea" class="sensitive-locked">
+                    <div style="margin-bottom:15px;">
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:5px;">
+                            Telegram Bot Token <i class="fa-solid fa-lightbulb field-guide-trigger" onclick="showGuide('token')"></i>
+                        </label>
+                        <div class="password-wrapper">
+                            <input type="password" id="settingsToken" class="glass-input" placeholder="Bot Token Placeholder">
+                            <i class="fa-solid fa-eye password-toggle-btn" onclick="togglePassVisibility('settingsToken', this)"></i>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:15px;">
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:5px;">
+                            Telegram Chat ID <i class="fa-solid fa-lightbulb field-guide-trigger" onclick="showGuide('chatid')"></i>
+                        </label>
+                        <div class="password-wrapper">
+                            <input type="password" id="settingsChatid" class="glass-input" placeholder="Chat ID Placeholder">
+                            <i class="fa-solid fa-eye password-toggle-btn" onclick="togglePassVisibility('settingsChatid', this)"></i>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:15px;">
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:5px;">
+                            Personal Gemini API Key (Optional) <i class="fa-solid fa-lightbulb field-guide-trigger" onclick="showGuide('gemini')"></i>
+                        </label>
+                        <div class="password-wrapper">
+                            <input type="password" id="settingsGeminiKey" class="glass-input" placeholder="Quotas running low? Add your own key.">
+                            <i class="fa-solid fa-eye password-toggle-btn" onclick="togglePassVisibility('settingsGeminiKey', this)"></i>
+                        </div>
+                        <p style="font-size:0.75rem; color:var(--warning); margin-top:5px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Only add your key if the default AI experiences delays or quota limits.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="health-gauge-container">
+                    <div class="health-gauge">
+                        <div style="font-size:0.7rem;">GEMINI AI</div>
+                        <div class="health-bar"><div class="health-fill" id="geminiHealth" style="width: 100%;"></div></div>
+                    </div>
+                    <div class="health-gauge">
+                        <div style="font-size:0.7rem;">VOCAL SYNC</div>
+                        <div class="health-bar"><div class="health-fill" id="vocalHealth" style="width: 100%;"></div></div>
+                    </div>
+                    <div class="health-gauge">
+                        <div style="font-size:0.7rem;">SYSTEM LINK</div>
+                        <div class="health-bar"><div class="health-fill" id="systemHealth" style="width: 100%;"></div></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding:10px; background:rgba(255,255,255,0.03); border-radius:10px;">
+                    <div style="font-size:0.85rem;">
+                        <i class="fa-solid fa-moon"></i> Solar Auto-Theme
+                        <div style="font-size:0.7rem; color:var(--text-muted);">Sync UI colors with your sun cycle</div>
+                    </div>
+                    <input type="checkbox" id="solarThemeToggle" style="width:20px; height:20px;">
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:10px; background:rgba(255,255,255,0.03); border-radius:10px;">
+                    <div style="font-size:0.85rem;">
+                        <i class="fa-solid fa-bell"></i> Daily Telegram Briefings
+                        <div style="font-size:0.7rem; color:var(--text-muted);">Receive automated AI weather summaries every morning at 7:00 AM</div>
+                    </div>
+                    <input type="checkbox" id="settingsDailyBriefing" checked style="width:20px; height:20px;">
+                </div>
+
+                <div style="text-align: center; margin: 25px 0 20px;">
+                    <button class="btn-secondary" style="font-size:0.85rem; width:auto; padding:8px 20px;" onclick="document.getElementById('guideModal').classList.add('active')">
+                        <i class="fa-solid fa-circle-question"></i> How to get these details?
+                    </button>
+                </div>
+                
+                <button class="btn-primary" id="btnSaveSettings"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                <div id="settingsStatusMsg" style="margin-top:15px; font-weight:bold; height: 20px;"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- MODAL: DYNAMIC GUIDE -->
+    <div class="modal-overlay" id="guideModal">
+        <div class="card modal-card wide">
+            <h2 style="display:flex; justify-content:space-between; align-items:center;">
+                <span id="guideModalTitle">Integration Guide</span>
+                <i class="fa-solid fa-xmark" style="cursor:pointer; font-size:1.2rem;" onclick="document.getElementById('guideModal').classList.remove('active')"></i>
+            </h2>
+            <div id="guideModalContent" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    <!-- MODAL: HOURLY BREAKDOWN -->
+    <div class="modal-overlay" id="hourlyModal">
+        <div class="card modal-card wide">
+            <h2 style="display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fa-solid fa-clock-rotate-left" style="color:var(--accent-cyan);"></i> Hourly Analysis: <span id="hourlyModalDate">Date</span></span>
+                <i class="fa-solid fa-xmark" style="cursor:pointer; font-size:1.2rem;" onclick="document.getElementById('hourlyModal').classList.remove('active')"></i>
+            </h2>
+            <div style="margin-top:20px;">
+                <canvas id="hourlyChart" style="max-height: 400px;"></canvas>
+            </div>
+            <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;" id="hourlyGrid">
+                <!-- Dynamic hourly slots -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- MODAL: VERIFY PASSWORD -->
+    <div class="modal-overlay" id="verifyModal">
+        <div class="card modal-card">
+            <h2 style="margin-bottom:15px;"><i class="fa-solid fa-shield-halved" style="color:var(--danger);"></i> Security Check</h2>
+            <p style="color:var(--text-muted); margin-bottom:20px;">Please re-enter your password to access sensitive integration fields.</p>
+            <input type="password" id="verifyPasswordInput" class="glass-input" placeholder="Enter your password">
+            <div id="verifyErrorMsg" style="color:var(--danger); margin-bottom:15px; font-weight:bold; font-size:0.85rem;"></div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-secondary" onclick="document.getElementById('verifyModal').classList.remove('active')">Cancel</button>
+                <button class="btn-primary" id="btnDoVerify">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE AND APP LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, sendEmailVerification, sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        // Global Helpers
+        window.togglePassVisibility = (id, btn) => {
+            const input = document.getElementById(id);
+            if(input.type === 'password') {
+                input.type = 'text';
+                btn.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                btn.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        };
+
+        window.showToast = (message, type = 'info') => {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info');
+            const color = type === 'success' ? '#22c55e' : (type === 'error' ? '#ef4444' : '#3b82f6');
+            
+            toast.innerHTML = `<i class="fa-solid ${icon}" style="color:${color}; font-size:1.2rem;"></i>
+                               <div style="flex:1; font-size:0.95rem;">${message}</div>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        };
+
+        window.showGuide = (field) => {
+            const title = document.getElementById('guideModalTitle');
+            const content = document.getElementById('guideModalContent');
+            const modal = document.getElementById('guideModal');
+
+            const library = {
+                gemini: {
+                    title: '🔑 Gemini API Key - Detailed Guide',
+                    html: `<div class="guide-step">
+                        <p>Google Gemini powers the AI brains of this application. To ensure uninterrupted service, we recommend using your own API key.</p>
+                        <ol>
+                            <li>Visit <b>Google AI Studio</b>: <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent-cyan);">aistudio.google.com</a></li>
+                            <li>Log in with any standard Google/Gmail account.</li>
+                            <li>On the left sidebar, click <b>"Get API Key"</b>.</li>
+                            <li>Click the blue button: <b>"Create API key in new project"</b>.</li>
+                            <li><b>Wait a few seconds</b> for the system to generate your unique string.</li>
+                            <li>Click <b>"Copy"</b> on the API key that begins with <span class="guide-code" style="display:inline-block;">AIzaSy...</span></li>
+                            <li>Return here and paste it into the Gemini Key field.</li>
+                        </ol>
+                        <div style="background:rgba(234, 179, 8, 0.1); padding:10px; border-radius:8px; border-left:4px solid var(--warning); margin-top:15px; font-size:0.85rem;">
+                            <b>Pro Tip:</b> Google provides a very generous "Free Tier" for Gemini Flash which is more than enough for personal weather queries!
+                        </div>
+                    </div>`
+                },
+                token: {
+                    title: '🤖 Telegram Bot Token - Step-by-Step',
+                    html: `<div class="guide-step">
+                        <p>A Bot Token allows our application to send you private notifications through the Telegram app.</p>
+                        <ol>
+                            <li>Open Telegram and search for <b>@BotFather</b> (the official bot creator).</li>
+                            <li>Start the chat and send the command: <span class="guide-code" style="display:inline-block;">/newbot</span></li>
+                            <li>Choose a <b>Display Name</b> for your bot (e.g. "My Weather Assistant").</li>
+                            <li>Choose a <b>Username</b> (e.g. "weather_ai_123_bot"). <i>Must end in 'bot'.</i></li>
+                            <li>BotFather will reply with a long string of numbers and letters. <b>This is your Token.</b></li>
+                            <li>Copy the <b>entire token</b> and paste it in Settings.</li>
+                        </ol>
+                        <p style="font-size:0.85rem; color:var(--text-muted);">Example: <code>12345678:ABC-DEF1234ghIkl-zyx57W2v1u123ew11</code></p>
+                    </div>`
+                },
+                chatid: {
+                    title: '🆔 Telegram Chat ID - Final Step',
+                    html: `<div class="guide-step">
+                        <p>The Chat ID tells the bot <b>which user</b> (you) to send the messages to.</p>
+                        <ol>
+                            <li>Search for <b>your own bot</b> name in Telegram and click <b>"Start"</b>.</li>
+                            <li>Send a random message like "Hello" to the bot.</li>
+                            <li>Open your web browser and visit this URL (replace TOKEN with your actual bot token):
+                                <div class="guide-code">https://api.telegram.org/bot&lt;YOUR_TOKEN&gt;/getUpdates</div>
+                            </li>
+                            <li>You will see a page of code. Look for the part that says <code>"chat":{"id":123456789}</code>.</li>
+                            <li>The number (e.g. <b>123456789</b>) is your Chat ID. Copy it here.</li>
+                        </ol>
+                        <p style="font-size:0.85rem; color:var(--text-muted);">Note: Your Chat ID is a private number unique to your Telegram account.</p>
+                    </div>`
+                }
+            };
+
+            if(library[field]) {
+                title.innerHTML = library[field].title;
+                content.innerHTML = library[field].html;
+                modal.classList.add('active');
+            }
+        };
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4OUw4oWHJNVUQzskaZCybyT_8MuR-wCU",
+            authDomain: "resumateai-73fa9.firebaseapp.com",
+            projectId: "resumateai-73fa9",
+            storageBucket: "resumateai-73fa9.firebasestorage.app",
+            messagingSenderId: "932879460758",
+            appId: "1:932879460758:web:68f1c7ce2f2343810ad5b7"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let vocalPersona = 'casual';
+        let fullForecastData = [];
+        let pinnedInsights = JSON.parse(localStorage.getItem('weatherai_pins') || '[]');
+
+        // 1. Bio-Sync: Pre-Login Intelligence
+        async function runBioSync() {
+            const header = document.getElementById('bioSyncHeader');
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                document.getElementById('bioLocation').innerText = `${data.city}, ${data.country_code}`;
+                
+                // Fetch simple weather for bio-sync
+                const wRes = await fetch(`/weather?city=${data.city}&user_type=general`);
+                const wData = await wRes.json();
+                document.getElementById('bioWeather').innerText = `${wData.temp}°C | ${wData.desc}`;
+                header.style.display = 'block';
+            } catch(e) { console.log("Bio-sync skipped"); }
+        }
+        runBioSync();
+
+        // 2. Role Preview Logic
+        document.getElementById('signupUsertype').addEventListener('change', (e) => {
+            const text = document.getElementById('rolePreviewText');
+            const preview = document.getElementById('rolePreview');
+            const perks = {
+                farmer: "AI: Soil Moisture Sync, Crop Frost Alerts, Irrigation Strategy.",
+                traveler: "AI: Route Turbulence Sync, Packing Genie, Jetstream Tracking.",
+                sports: "AI: Heat Stroke Monitoring, Turf Traction AI, UV Exposure alerts.",
+                student: "AI: Academic Event Planner, Activity Focus Sync, Local Air Quality.",
+                trekking: "AI: Oxygen Level Sync, Path Risk Vectors, Altitude Storm Alerts.",
+                general: "AI: Basic Safety, Activity Recommendations, Standard Forecasts."
+            };
+            text.innerText = perks[e.target.value] || "Select a role to see AI perks.";
+            preview.style.display = 'block';
+        });
+
+        // 4. Chronos Slider Logic
+        document.getElementById('chronosRange').addEventListener('input', (e) => {
+            if (!fullForecastData.length) return;
+            const idx = parseInt(e.target.value);
+            const item = fullForecastData[idx];
+            if (!item) return;
+
+            document.getElementById('chronosLabel').innerText = item.dt_txt.split(' ')[1].substring(0, 5);
+            document.getElementById('dispTemp').innerText = Math.round(item.main.temp);
+            document.getElementById('dispDesc').innerText = item.weather[0].description;
+            document.getElementById('dispHum').innerText = item.main.humidity + "%";
+            
+            // Re-update Risk Bar simulation
+            const risk = (item.main.temp > 35 || item.main.humidity > 80) ? 75 : 15;
+            document.getElementById('riskValue').innerText = risk + "%";
+            const rb = document.getElementById('riskBar');
+            rb.style.width = risk + "%";
+            rb.style.background = risk > 60 ? 'var(--danger)' : 'var(--success)';
+        });
+
+        // 5. Chat Flash-Cards & Pinning
+        window.renderFlashCards = (data) => {
+            const rail = document.getElementById('suggestedCards');
+            const actions = [
+                { icon: 'fa-person-running', text: 'Outdoor Workout', status: (data.temp > 30 ? 'Caution' : 'Optimal') },
+                { icon: 'fa-umbrella', text: 'Gear Check', status: (data.desc.includes('rain') ? 'Critical' : 'Safe') },
+                { icon: 'fa-car', text: 'Commute Pulse', status: 'Stable' }
+            ];
+            rail.innerHTML = actions.map(a => `
+                <div class="flash-card" onclick="document.getElementById('chatInput').value='Tell me about ${a.text}'; handleChatSend();">
+                    <i class="fa-solid ${a.icon}" style="color:var(--accent-blue)"></i>
+                    <b>${a.text}</b>
+                    <span style="color:${a.status === 'Optimal' || a.status === 'Safe' ? 'var(--success)' : 'var(--warning)'}">${a.status}</span>
+                </div>
+            `).join('');
+        };
+
+        window.pinMessage = (btn, text) => {
+            btn.classList.toggle('active');
+            if (btn.classList.contains('active')) {
+                pinnedInsights.push({ id: Date.now(), text: text });
+                showToast("Insight Pinned to Vault", "success");
+            } else {
+                pinnedInsights = pinnedInsights.filter(p => p.text !== text);
+            }
+            localStorage.setItem('weatherai_pins', JSON.stringify(pinnedInsights));
+        };
+
+        // 6. Voice Persona & Ambient Link
+        window.setPersona = (persona) => {
+            vocalPersona = persona;
+            document.querySelectorAll('.persona-chip').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.persona-chip[data-persona="${persona}"]`).classList.add('active');
+            showToast(`Persona: ${persona.toUpperCase()}`, "info");
+        };
+
+        // 7. Core Health & Solar Theme
+        function updateSystemHealth() {
+            const rand = () => Math.floor(Math.random() * 30) + 70;
+            if(document.getElementById('geminiHealth')) document.getElementById('geminiHealth').style.width = rand() + "%";
+            if(document.getElementById('vocalHealth')) document.getElementById('vocalHealth').style.width = rand() + "%";
+            if(document.getElementById('systemHealth')) document.getElementById('systemHealth').style.width = "100%";
+        }
+        setInterval(updateSystemHealth, 5000);
+
+        function runSolarEngine() {
+            const toggle = document.getElementById('solarThemeToggle');
+            if (!toggle || !toggle.checked) return;
+            const hour = new Date().getHours();
+            const isNight = hour < 6 || hour > 18;
+            setTheme(isNight ? 'dark' : 'light');
+        }
+        setInterval(runSolarEngine, 60000);
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const icon = document.querySelector('#themeToggle i');
+            if(icon) icon.className = theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            localStorage.setItem('weatherai_theme', theme);
+        }
+
+        const translations = {
+            en: {
+                title: "WeatherAI Assistant", dashboard: "Dashboard", chat: "AI Chat", voice: "Voice Assistant", settings: "Settings",
+                search_placeholder: "Enter city name...", analyze: "Analyze", add_monitoring: "Add to Monitoring",
+                risk_status: "Risk Status", weather_trend: "Weather Prediction (3 Days)", hum_wind: "Humidity & Wind Trend",
+                personal_recs: "Personal Recommendations", send_telegram: "Send to Telegram", ml_verdict: "ML AI Verdict",
+                chat_welcome: "👋 Hello! I'm your AI Weather Assistant.", chat_placeholder: "Ask about weather...",
+                voice_awaiting: '"Awaiting environmental query. Tap the sphere to engage."',
+                voice_listening: "Assistant is listening...", voice_speaking: "Assistant is speaking...",
+                save_prefs: "Save Preferences", user_role: "User Role", system_lang: "System Language",
+                credentials_set: "Credentials saved."
+            },
+            hi: {
+                title: "मौसम एआई सहायक", dashboard: "डैशबोर्ड", chat: "एआई चैट", voice: "वॉयस असिस्टेंट", settings: "सेटिंग्स",
+                search_placeholder: "शहर का नाम दर्ज करें...", analyze: "विश्लेषण करें", add_monitoring: "निगरानी में जोड़ें",
+                risk_status: "जोखिम स्थिति", weather_trend: "मौसम भविष्यवाणी (3 दिन)", hum_wind: "नमी और हवा की प्रवृत्ति",
+                personal_recs: "व्यक्तिगत सुझाव", send_telegram: "टेलीग्राम पर भेजें", ml_verdict: "एआई निर्णय",
+                chat_welcome: "👋 नमस्ते! मैं आपका एआई मौसम सहायक हूँ।", chat_placeholder: "मौसम के बारे में पूछें...",
+                voice_awaiting: '"पर्यावरण संबंधी प्रश्न की प्रतीक्षा है। जुड़ने के लिए गोले पर टैप करें।"',
+                voice_listening: "सहायक सुन रहा है...", voice_speaking: "सहायक बोल रहा है...",
+                save_prefs: "प्राथमिकताएं सहेजें", user_role: "उपयोगकर्ता भूमिका", system_lang: "सिस्टम भाषा",
+                credentials_set: "क्रेडेंशियल्स सहेजे गए।"
+            },
+            te: {
+                title: "వాతావరణ AI సహాయకుడు", dashboard: "డ్యాష్‌బోర్డ్", chat: "AI చాట్", voice: "వాయిస్ అసిస్టెంట్", settings: "సెట్టింగులు",
+                search_placeholder: "నగరం పేరును నమోదు చేయండి...", analyze: "విశ్లేషించు", add_monitoring: "పర్యవేక్షణకు జోడించు",
+                risk_status: "ప్రమాద స్థితి", weather_trend: "వాతావరణ అంచనా (3 రోజులు)", hum_wind: "తేమ & గాలి ధోరణి",
+                personal_recs: "వ్యక్తిగత సిఫార్సులు", send_telegram: "టెలిగ్రామ్‌కు పంపండి", ml_verdict: "AI తీర్పు",
+                chat_welcome: "👋 హలో! నేను మీ AI వాతావరణ సహాయకుడిని.", chat_placeholder: "వాతావరణం గురించి అడగండి...",
+                voice_awaiting: '"పర్యావరణ ప్రశ్న కోసం వేచి ఉంది. నిమగ్నం కావడానికి గోళాన్ని నొక్కండి."',
+                voice_listening: "అసిస్టెంట్ వింటున్నారు...", voice_speaking: "అసిస్టెంట్ మాట్లాడుతున్నారు...",
+                save_prefs: "ప్రాధాన్యతలను సేవ్ చేయండి", user_role: "వినియోగదారు పాత్ర", system_lang: "సిస్టమ్ భాష",
+                credentials_set: "రుజువులు సేవ్ చేయబడ్డాయి."
+            }
+        };
+
+        window.userPrefs = null;
+        window.userCities = JSON.parse(localStorage.getItem('weatherai_cities')) || [];
+        let lastCityContext = "";
+        let lastVoiceQuery = "";
+        let isOffline = !navigator.onLine;
+
+        function applyLanguage(lang) {
+            const t = translations[lang] || translations.en;
+            if(!t) return;
+            document.title = t.title;
+
+            // Helper to safe update
+            const setUI = (id, html, isQuery = false) => {
+                const el = isQuery ? document.querySelector(id) : document.getElementById(id);
+                if(el) el.innerHTML = html;
+            };
+            const setVal = (id, val, isQuery = false) => {
+                const el = isQuery ? document.querySelector(id) : document.getElementById(id);
+                if(el) el.innerText = val;
+            };
+
+            // Nav
+            setVal('#navDashboard span', t.dashboard, true);
+            setVal('#navChat span', t.chat, true);
+            setVal('#navVoice span', t.voice, true);
+            setVal('#navSettings span', t.settings, true);
+
+            // Dashboard UI
+            const cs = document.getElementById('citySearch');
+            if(cs) cs.placeholder = t.search_placeholder;
+
+            setUI('btnFetchWeather', `<i class="fa-solid fa-magnifying-glass-chart"></i> ${t.analyze}`);
+            setUI('btnAddCity', `<i class="fa-solid fa-plus"></i> ${t.add_monitoring}`);
+            setUI('h3RiskStatus', `<i class="fa-solid fa-triangle-exclamation"></i> ${t.risk_status}`);
+            setUI('h3TempTrend', `<i class="fa-solid fa-chart-line"></i> ${t.weather_trend}`);
+            setUI('h3MLVerdict', `<i class="fa-solid fa-braille"></i> ${t.ml_verdict}`);
+            setUI('h3PersonalRecs', t.personal_recs);
+            setUI('btnTelegramRecs', `<i class="fa-solid fa-paper-plane"></i> ${t.send_telegram}`);
+
+            // Chat & Voice
+            setUI('#chat h2', `<i class="fa-solid fa-wand-magic-sparkles"></i> ${t.title} Chatbot`, true);
+            const ci = document.getElementById('chatInput');
+            if(ci) ci.placeholder = t.chat_placeholder;
+            setVal('voiceAiText', t.voice_awaiting);
+
+            // Settings
+            setVal('#settings h2', t.settings, true);
+            const h4s = document.querySelectorAll('#settings h4');
+            if(h4s[0]) h4s[0].innerText = t.user_role;
+            if(h4s[1]) h4s[1].innerText = t.system_lang;
+            setUI('btnSaveSettings', `<i class="fa-solid fa-circle-check"></i> ${t.save_prefs}`);
+        }
+
+        // Auto-Geolocation
+        window.addEventListener('load', () => {
+            const savedLang = localStorage.getItem('weatherai_lang') || 'en';
+            document.getElementById('settingsLang').value = savedLang;
+            applyLanguage(savedLang);
+
+            if (navigator.geolocation && !isOffline) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    fetch(`http://api.openweathermap.org/geo/1.0/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&limit=1&appid=aadcc496e340e8dc5354c34c33272ed2`)
+                    .then(r=>r.json()).then(geo => {
+                        if(geo.length > 0) {
+                            const cityName = geo[0].name;
+                            document.getElementById('citySearch').value = cityName;
+                            
+                            // Synchronize Bio-Sync Header with Precise Data
+                            const bioLoc = document.getElementById('bioLocation');
+                            if(bioLoc) {
+                                bioLoc.innerText = `${cityName}, ${geo[0].country}`;
+                                // Refresh weather for precisely detected location
+                                fetch(`/weather?city=${cityName}&user_type=general`)
+                                .then(wr=>wr.json()).then(wData => {
+                                    const bioW = document.getElementById('bioWeather');
+                                    if(bioW) bioW.innerText = `${wData.temp}°C | ${wData.desc}`;
+                                });
+                            }
+
+                            if(window.userPrefs) document.getElementById('btnFetchWeather').click();
+                        }
+                    });
+                });
+            }
+            renderCityCards();
+        });
+
+        window.addEventListener('online', () => { isOffline = false; document.getElementById('offlineIndicator').style.display = 'none'; });
+        window.addEventListener('offline', () => { isOffline = true; document.getElementById('offlineIndicator').style.display = 'block'; });
+
+        // UI Tabs & Theme Logic
+        const navBtns = document.querySelectorAll('.nav-btn');
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if(btn.style.display === 'none') return; // Prevent hidden tab access
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(btn.getAttribute('data-target')).classList.add('active');
+                btn.classList.add('active');
+            });
+        });
+
+        // Theme Toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', targetTheme);
+            document.getElementById('themeToggle').innerHTML = targetTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+            
+            // Persist preference
+            localStorage.setItem('weatherai_theme', targetTheme);
+        });
+
+        // Initialize Theme from localStorage
+        window.addEventListener('load', () => {
+            const savedTheme = localStorage.getItem('weatherai_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').innerHTML = savedTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        });
+
+        // Auth Logic UI Swapping
+        document.getElementById('btnGoSignup').addEventListener('click', () => {
+            document.getElementById('loginFormCard').style.display = 'none';
+            document.getElementById('signupFormCard').style.display = 'block';
+            document.getElementById('loginErrorMsg').innerText = "";
+        });
+        document.getElementById('btnGoLogin').addEventListener('click', () => {
+            document.getElementById('signupFormCard').style.display = 'none';
+            document.getElementById('loginFormCard').style.display = 'block';
+            document.getElementById('signupErrorMsg').innerText = "";
+        });
+
+        // Firebase Auth State Listener
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    await user.reload(); // 🔥 Force refresh to detect verification click
+                } catch (e) { console.error("Reload skip:", e); }
+            }
+
+            if (user && user.emailVerified) {
+                // Logged In
+                document.getElementById('loginFormCard').style.display = 'none';
+                document.getElementById('signupFormCard').style.display = 'none';
+                document.getElementById('loggedInCard').style.display = 'block';
+
+                document.getElementById('navDashboard').style.display = 'flex';
+                document.getElementById('navChat').style.display = 'flex';
+                document.getElementById('navVoice').style.display = 'flex';
+                document.getElementById('navSettings').style.display = 'flex';
+                
+                // Fetch user data from firestore
+                const docSnap = await getDoc(doc(db, "users", user.uid));
+                window.userPrefs = docSnap.exists() ? docSnap.data() : { type: 'general' };
+
+                // Map UI Details
+                document.getElementById('profUser').innerText = user.displayName || "Anonymous User";
+                document.getElementById('profEmail').innerText = user.email;
+                document.getElementById('profAvatar').innerText = (user.displayName || "U").charAt(0).toUpperCase();
+                document.getElementById('profUid').innerText = user.uid;
+                document.getElementById('profRole').innerText = (window.userPrefs.type || 'general').charAt(0).toUpperCase() + (window.userPrefs.type || 'general').slice(1);
+
+                if (docSnap.exists()) {
+                    document.getElementById('settingsUsertype').value = window.userPrefs.type || 'general';
+                    document.getElementById('settingsToken').value = window.userPrefs.telegram_token || '';
+                    document.getElementById('settingsChatid').value = window.userPrefs.telegram_chatid || '';
+                    document.getElementById('settingsGeminiKey').value = window.userPrefs.gemini_key || '';
+                    if (window.userPrefs.daily_briefing !== undefined) document.getElementById('settingsDailyBriefing').checked = window.userPrefs.daily_briefing;
+                }
+
+                if(document.getElementById('auth').classList.contains('active')){
+                     document.getElementById('navDashboard').click();
+                }
+
+            } else {
+                // Logged Out (or Unverified)
+                document.getElementById('loggedInCard').style.display = 'none';
+                document.getElementById('loginFormCard').style.display = 'block';
+                
+                document.getElementById('navDashboard').style.display = 'none';
+                document.getElementById('navChat').style.display = 'none';
+                document.getElementById('navVoice').style.display = 'none';
+                document.getElementById('navSettings').style.display = 'none';
+                document.getElementById('navAuth').click();
+                window.userPrefs = null;
+            }
+        });
+
+        document.getElementById('btnGoDashboardFromAuth').addEventListener('click', () => {
+            document.getElementById('navDashboard').click();
+        });
+
+        document.getElementById('btnGoSettingsFromAuth').addEventListener('click', () => {
+             document.getElementById('navSettings').click();
+        });
+
+        // Registration Logic (Strict Rules)
+        document.getElementById('btnDoSignup').addEventListener('click', async () => {
+            const err = document.getElementById('signupErrorMsg');
+            const un = document.getElementById('signupUsername').value.trim();
+            const em = document.getElementById('signupEmail').value.trim();
+            const pw = document.getElementById('signupPassword').value;
+            const cp = document.getElementById('signupConfirmPassword').value;
+            const ut = document.getElementById('signupUsertype').value;
+            const tt = document.getElementById('signupToken').value.trim();
+            const tc = document.getElementById('signupChatid').value.trim();
+
+            if(!un || !em || !pw || !cp || !ut) return err.innerText = "Please fill all required fields.";
+            if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return err.innerText = "Invalid email format.";
+            if(pw.length < 8) return err.innerText = "Password must be at least 8 characters.";
+            if(pw !== cp) return err.innerText = "Passwords do not match.";
+
+            err.style.color = "var(--warning)";
+            err.innerText = "Creating account...";
+
+            try {
+                const userCred = await createUserWithEmailAndPassword(auth, em, pw);
+                await updateProfile(userCred.user, { displayName: un });
+                
+                // Store extra details in firestore
+                let dbErrorMsg = "";
+                try {
+                    await setDoc(doc(db, "users", userCred.user.uid), {
+                        username: un,
+                        type: ut,
+                        telegram_token: tt,
+                        telegram_chatid: tc,
+                        created_at: new Date()
+                    });
+                } catch (dbErr) {
+                    console.error("Firestore setup error:", dbErr);
+                    dbErrorMsg = " (Warning: Details not saved! Please enable 'Test Mode' in Firebase Firestore Rules)";
+                }
+
+                // Send email verification exactly as specified with redirect rules
+                try {
+                    await sendEmailVerification(auth.currentUser, {
+                        url: window.location.origin, // Automatically uses http://127.0.0.1:5000
+                        handleCodeInApp: false       // 🔥 Stable Firebase handler
+                    });
+                    console.log("Verification email sent successfully.");
+                } catch(emailErr) {
+                    console.error("Failed to send verification email:", emailErr);
+                    dbErrorMsg = " (Error sending email: " + emailErr.message + ")";
+                }
+
+                document.getElementById('btnGoLogin').click();
+                showToast("Account created! Verify your email to login.", "success");
+                
+            } catch (error) {
+                showToast(error.message, "error");
+            }
+        });
+
+        // Login Logic
+        document.getElementById('btnDoLogin').addEventListener('click', async () => {
+            const err = document.getElementById('loginErrorMsg');
+            const em = document.getElementById('loginEmail').value.trim();
+            const pw = document.getElementById('loginPassword').value;
+            
+            if(!em || !pw) return err.innerText = "Provide email and password.";
+            err.style.color = "var(--warning)";
+            err.innerText = "Authenticating...";
+
+            try {
+                const userCred = await signInWithEmailAndPassword(auth, em, pw);
+                if (!userCred.user.emailVerified) {
+                    err.style.color = "var(--warning)";
+                    err.innerHTML = `Access denied. Please verify your email first.<br>
+                                    <span id="btnResendEmail" style="color:var(--accent-blue); cursor:pointer; font-size:0.8rem; text-decoration:underline;">Resend verification email?</span>`;
+                    
+                    document.getElementById('btnResendEmail').onclick = async () => {
+                        try {
+                            await sendEmailVerification(userCred.user, { url: window.location.origin, handleCodeInApp: false });
+                            showToast("Verification email resent!", "info");
+                        } catch(e) { showToast("Resend failed: " + e.message, "error"); }
+                    };
+
+                    await signOut(auth); // Reject unverified
+                    return;
+                }
+                showToast("", ""); // Clear loading toast
+            } catch (error) {
+                showToast(error.message, "error");
+            }
+        });
+
+        // Forgot Password Logic
+        document.getElementById('btnForgotPass').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value.trim();
+            if(!email) return alert("Please enter your email address first.");
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showToast("Password reset link sent! Please check your inbox.", "success");
+            } catch(e) { showToast("Reset failed: " + e.message, "error"); }
+        });
+
+        // Sensitive Area Toggle (Unlock Logic)
+        document.getElementById('btnUnlockSensitive').addEventListener('click', () => {
+             document.getElementById('verifyModal').classList.add('active');
+        });
+
+        document.getElementById('btnDoVerify').addEventListener('click', async () => {
+            const pw = document.getElementById('verifyPasswordInput').value;
+            const err = document.getElementById('verifyErrorMsg');
+            if(!pw) return err.innerText = "Password required.";
+            
+            try {
+                const credential = EmailAuthProvider.credential(auth.currentUser.email, pw);
+                await reauthenticateWithCredential(auth.currentUser, credential);
+                
+                // Unlock
+                document.getElementById('sensitiveArea').classList.remove('sensitive-locked');
+                document.getElementById('btnUnlockSensitive').innerHTML = '<i class="fa-solid fa-lock-open"></i> Unlocked';
+                document.getElementById('btnUnlockSensitive').style.pointerEvents = 'none';
+                document.getElementById('verifyModal').classList.remove('active');
+            } catch(e) {
+                err.innerText = "Verification failed: " + e.message;
+            }
+        });
+
+        // Logout Logic
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // Settings Save Logic
+        document.getElementById('btnSaveSettings').addEventListener('click', async () => {
+            const err = document.getElementById('settingsStatusMsg');
+            if(!auth.currentUser) return err.innerText = "Not authenticated";
+
+            const ut = document.getElementById('settingsUsertype').value;
+            const tt = document.getElementById('settingsToken').value.trim();
+            const tc = document.getElementById('settingsChatid').value.trim();
+            const gk = document.getElementById('settingsGeminiKey').value.trim();
+            const daily = document.getElementById('settingsDailyBriefing').checked;
+
+            err.style.color = "var(--warning)";
+            err.innerText = "Saving...";
+
+            try {
+                await setDoc(doc(db, "users", auth.currentUser.uid), {
+                    type: ut,
+                    telegram_token: tt,
+                    telegram_chatid: tc,
+                    gemini_key: gk,
+                    daily_briefing: daily
+                }, { merge: true });
+
+                // Subscribe to backend for daily automated briefings
+                fetch('/subscribe_daily', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        uid: auth.currentUser.uid,
+                        city: document.getElementById('citySearch').value || 'London',
+                        telegram_token: tt,
+                        telegram_chatid: tc,
+                        lang: document.getElementById('settingsLang').value,
+                        user_type: ut,
+                        gemini_key: gk,
+                        enabled: daily
+                    })
+                }).catch(e => console.log("Backend subscription skipped"));
+                
+                // Update local context
+                window.userPrefs.type = ut;
+                window.userPrefs.telegram_token = tt;
+                window.userPrefs.telegram_chatid = tc;
+                window.userPrefs.gemini_key = gk;
+                window.userPrefs.lang = document.getElementById('settingsLang').value;
+
+                localStorage.setItem('weatherai_lang', window.userPrefs.lang);
+                applyLanguage(window.userPrefs.lang);
+
+                err.style.color = "var(--success)";
+                showToast("Preferences saved successfully!", "success");
+                setTimeout(()=> err.innerText = "", 3000);
+            } catch (e) {
+                showToast("Save failed: " + e.message, "error");
+            }
+        });
+
+        // ---------- WEATHER AND CHAT API TIES ---------- //
+
+        const chartOptions = {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: { 
+                legend: { display: false },
+                tooltip: { backgroundColor: 'rgba(30, 41, 59, 0.9)', titleColor: '#3b82f6', bodyColor: '#f8fafc', padding: 12, borderRadius: 8 }
+            },
+            onClick: (e, elements, chart) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const dateLabel = chart.data.dates[index];
+                    showHourlyDrilldown(dateLabel);
+                }
+            }
+        };
+
+        const c1 = document.getElementById("weatherChart");
+        let weatherChart = null;
+        if(c1) {
+            weatherChart = new Chart(c1.getContext("2d"), { 
+                type: 'bar', 
+                data: { labels: [], dates: [], datasets: [{ label: 'High Temp (°C)', data: [], backgroundColor: 'rgba(59, 130, 246, 0.4)', borderColor: '#3b82f6', borderWidth: 2, borderRadius: 5 }] }, 
+                options: chartOptions 
+            });
+        }
+
+        const c2 = document.getElementById("weatherChartHumWind");
+        let weatherChartHumWind = null;
+        if(c2) {
+            weatherChartHumWind = new Chart(c2.getContext("2d"), { 
+                type: 'line', 
+                data: { 
+                    labels: [], 
+                    dates: [],
+                    datasets: [
+                        { label: 'Humidity (%)', data: [], borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', borderWidth: 2, fill: true, tension: 0.4 },
+                        { label: 'Wind Speed (km/h)', data: [], borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }
+                    ] 
+                }, 
+                options: { ...chartOptions, plugins: { legend: { display: true, labels: { color: '#94a3b8' } } } } 
+            });
+        }
+
+        // Hourly Chart instance
+        let hourlyChart = null;
+
+        function showHourlyDrilldown(dateStr) {
+            const filtered = fullForecastData.filter(item => item.dt_txt.startsWith(dateStr));
+            if (!filtered.length) return showToast("No detailed data for this date", "info");
+
+            document.getElementById('hourlyModalDate').innerText = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            document.getElementById('hourlyModal').classList.add('active');
+
+            const labels = filtered.map(item => item.dt_txt.split(' ')[1].substring(0, 5));
+            const temps = filtered.map(item => item.main.temp);
+            const hums = filtered.map(item => item.main.humidity);
+
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            if (hourlyChart) hourlyChart.destroy();
+            
+            hourlyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Temp (°C)', data: temps, borderColor: '#3b82f6', tension: 0.4, fill: false },
+                        { label: 'Humidity (%)', data: hums, borderColor: '#06b6d4', tension: 0.4, fill: false }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' } },
+                        y: { ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            // Fill Grid
+            const grid = document.getElementById('hourlyGrid');
+            grid.innerHTML = filtered.map(item => `
+                <div class="metric-box" style="flex-direction: column; text-align: center; gap: 5px;">
+                    <span style="font-size: 0.75rem; color: var(--accent-cyan);">${item.dt_txt.split(' ')[1].substring(0, 5)}</span>
+                    <strong style="font-size: 1.1rem;">${Math.round(item.main.temp)}°C</strong>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: capitalize;">${item.weather[0].description}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateWeatherMsg(msg, color){ let m = document.getElementById("weatherStatusMsg"); m.style.color = color; m.innerText = msg; }
+
+        document.getElementById('btnFetchWeather').addEventListener('click', () => {
+            let city = document.getElementById("citySearch").value;
+            if(!city) return updateWeatherMsg("Please enter a city.", "var(--warning)");
+            if(!window.userPrefs) return updateWeatherMsg("Authentication missing. Please reload.", "var(--danger)");
+
+            updateWeatherMsg("⏳ Analyzing atmospheric data...", "var(--accent-blue)");
+            
+            const params = new URLSearchParams({
+                city: city,
+                user_type: window.userPrefs.type || 'general',
+                lang: window.userPrefs.lang || 'en',
+                telegram_token: window.userPrefs.telegram_token || '',
+                telegram_chatid: window.userPrefs.telegram_chatid || ''
+            });
+
+            // Fetch Current Weather
+            fetch(`/weather?${params.toString()}`).then(r=>r.json()).then(data => {
+                if(data.error) { 
+                    updateWeatherMsg("❌ AI Analysis failed", "var(--danger)");
+                    showToast(data.error, "error");
+                    document.getElementById('dashboardContent').style.display = 'none'; 
+                    return; 
+                }
+                
+                localStorage.setItem(`weather_cache_${city.toLowerCase()}`, JSON.stringify(data));
+                document.getElementById('dashboardContent').style.display = 'grid'; 
+                updateWeatherMsg("", "");
+                
+                lastCityContext = `${city}: ${data.temp}°C, Hum ${data.humidity}%, Wind ${data.wind}km/h, Cond: ${data.desc}. Risk: ${data.risk_score}%, AI: ${data.ai}`;
+                document.getElementById('dispCity').innerText = city; 
+                document.getElementById('dispDesc').innerText = data.desc;
+                document.getElementById('dispTemp').innerText = data.temp; 
+                document.getElementById('dispHum').innerText = data.humidity + "%";
+                document.getElementById('dispWind').innerText = data.wind + " km/h"; 
+                document.getElementById('dispAqi').innerText = data.aqi || "--";
+                document.getElementById('dispPm25').innerText = (data.pm25 || "--") + " μg/m³";
+                document.getElementById('dispAi').innerText = data.ai;
+
+                // Interactive Spatial Radar Map (Leaflet.js)
+                if (data.lat && data.lon && typeof L !== 'undefined') {
+                    if (window.weatherMapInstance) {
+                        window.weatherMapInstance.setView([data.lat, data.lon], 10);
+                        if (window.weatherMapMarker) window.weatherMapMarker.setLatLng([data.lat, data.lon]);
+                    } else {
+                        window.weatherMapInstance = L.map('weatherMap').setView([data.lat, data.lon], 10);
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                            attribution: '© OpenStreetMap © CARTO'
+                        }).addTo(window.weatherMapInstance);
+                        window.weatherMapMarker = L.marker([data.lat, data.lon]).addTo(window.weatherMapInstance);
+                    }
+                }
+
+                // Dynamic Skinning
+                document.body.className = ''; // reset
+                if (data.condition_category) {
+                    document.body.classList.add(`skin-${data.condition_category}`);
+                }
+                
+                const rs = data.risk_score || 0;
+                document.getElementById('riskValue').innerText = rs + "%";
+                const rb = document.getElementById('riskBar');
+                rb.style.width = rs + "%";
+                rb.style.background = rs < 20 ? 'var(--success)' : (rs < 60 ? 'var(--warning)' : 'var(--danger)');
+
+                let badge = document.getElementById('dispBadge');
+                if(data.ai.includes("Safe")) { badge.className = "badge good"; badge.innerHTML = '<i class="fa-solid fa-check"></i> Safe'; }
+                else if(data.ai.includes("Caution")) { badge.className = "badge moderate"; badge.innerHTML = 'Caution'; }
+                else { badge.className = "badge bad"; badge.innerHTML = 'High Risk'; }
+                
+                document.getElementById('dispRecs').innerHTML = data.tips.map(t => {
+                    const clean = t.replace(/^[-\*\d\.]+\s*/, '').trim();
+                    return clean ? `<li>📍 ${clean}</li>` : '';
+                }).join("");
+                
+                // Sync Global Pulse Feature
+                syncGlobalPulse(data, city);
+
+                // Render Flash Cards for Chat
+                renderFlashCards(data);
+
+                // Update Aura Glow
+                const aura = document.getElementById('widgetAura');
+                const hum = data.humidity || 50;
+                aura.style.transform = `translate(-50%, -50%) scale(${1 + hum/100})`;
+                aura.style.background = `radial-gradient(circle, ${hum > 70 ? 'var(--accent-blue)' : 'var(--accent-cyan)'} 0%, transparent 70%)`;
+                
+                // Fetch Forecast Data (Real-time)
+                fetch(`/forecast?city=${city}`).then(r=>r.json()).then(fData => {
+                    if (fData.error) return showToast(fData.error, "error");
+                    
+                    fullForecastData = fData.full_list;
+                    const labels = fData.daily.map(d => d.label);
+                    const dates = fData.daily.map(d => d.date);
+
+                    weatherChart.data.labels = labels;
+                    weatherChart.data.dates = dates;
+                    weatherChart.data.datasets[0].data = fData.daily.map(d => d.temp);
+                    weatherChart.update();
+
+                    weatherChartHumWind.data.labels = labels;
+                    weatherChartHumWind.data.dates = dates;
+                    weatherChartHumWind.data.datasets[0].data = fData.daily.map(d => d.hum);
+                    weatherChartHumWind.data.datasets[1].data = fData.daily.map(d => d.wind);
+                    weatherChartHumWind.update();
+                });
+            }).catch(()=> showToast("Weather API connection failed.", "error"));
+        });
+
+        // Manual Telegram Alarm
+        document.getElementById('btnTelegramRecs').addEventListener('click', () => {
+            if(!window.userPrefs || !window.userPrefs.telegram_token || !window.userPrefs.telegram_chatid) {
+                return showToast("Please set your Telegram credentials in Settings first.", "warning");
+            }
+            
+            const city = document.getElementById('dispCity').innerText;
+            if(city === "--") return showToast("Fetch weather first!", "info");
+
+            const recs = Array.from(document.querySelectorAll('#dispRecs li')).map(li => li.innerText).join('\n');
+            const message = `🚀 WeatherAI Recommendation for ${city}:\n\n${recs}\n\nStay safe!`;
+            
+            const btn = document.getElementById('btnTelegramRecs');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+            btn.disabled = true;
+
+            fetch('/send_telegram_alert', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    token: window.userPrefs.telegram_token,
+                    chatid: window.userPrefs.telegram_chatid,
+                    message: message
+                })
+            }).then(r=>r.json()).then(data => {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                if(data.success) {
+                    showToast("Recommendations sent to Telegram!", "success");
+                } else {
+                    showToast("Failed to send: " + (data.error || "Unknown error"), "error");
+                }
+            }).catch(() => {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                showToast("Connection failed.", "error");
+            });
+        });
+
+        function typeWriterHTML(element, html, speed = 15) {
+            element.innerHTML = "";
+            let tempDiv = document.createElement("div");
+            tempDiv.innerHTML = html;
+            
+            function typeNode(node, targetEl, cb) {
+                if (node.nodeType === 3) { // TEXT_NODE
+                    let text = node.textContent;
+                    let i = 0;
+                    let textNode = document.createTextNode("");
+                    targetEl.appendChild(textNode);
+                    function typeChar() {
+                        if (i < text.length) {
+                            textNode.textContent += text.charAt(i);
+                            let b = document.getElementById("chatBox");
+                            if (b) b.scrollTop = b.scrollHeight;
+                            i++;
+                            setTimeout(typeChar, speed);
+                        } else {
+                            cb();
+                        }
+                    }
+                    typeChar();
+                } else if (node.nodeType === 1) { // ELEMENT_NODE
+                    let newEl = document.createElement(node.tagName);
+                    Array.from(node.attributes).forEach(attr => newEl.setAttribute(attr.name, attr.value));
+                    targetEl.appendChild(newEl);
+                    if (node.childNodes.length > 0) {
+                        typeNodes(Array.from(node.childNodes), newEl, cb);
+                    } else {
+                        cb();
+                    }
+                } else {
+                    cb();
+                }
+            }
+
+            function typeNodes(nodes, targetEl, cb) {
+                let index = 0;
+                function next() {
+                    if (index < nodes.length) {
+                        typeNode(nodes[index++], targetEl, next);
+                    } else if (cb) {
+                        cb();
+                    }
+                }
+                next();
+            }
+
+            typeNodes(Array.from(tempDiv.childNodes), element);
+        }
+
+        function appendMsg(text, type, animate = false) {
+            let b = document.getElementById("chatBox");
+            let wrapper = document.createElement("div");
+            wrapper.className = "msg-wrapper " + type;
+
+            let avatar = document.createElement("div");
+            avatar.className = "chat-avatar " + (type === 'user' ? 'user-av' : 'bot-av');
+            
+            if(type === 'user') {
+                const userInitial = auth.currentUser?.displayName?.[0]?.toUpperCase() || "U";
+                avatar.innerText = userInitial;
+            } else {
+                avatar.innerHTML = `<img src="/templates/chatbot.png" onerror="this.innerHTML='AI'; this.style.background='var(--accent-cyan)';">`;
+            }
+
+            let div = document.createElement("div"); 
+            div.className = "msg " + type; 
+            
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(div);
+            b.appendChild(wrapper); 
+            b.scrollTop = b.scrollHeight;
+            
+            let finalHtml = text;
+            if (type === 'bot' && text.includes("typing-indicator")) {
+                div.innerHTML = text;
+            } else if (type === 'bot' && typeof marked !== 'undefined') {
+                finalHtml = marked.parse(text);
+                if (animate) typeWriterHTML(div, finalHtml, 15);
+                else div.innerHTML = finalHtml;
+            } else {
+                finalHtml = text.replace(/\\n/g, '<br>');
+                if (animate) typeWriterHTML(div, finalHtml, 15);
+                else div.innerHTML = finalHtml;
+            }
+        }
+
+        const handleChatSend = () => {
+            let input = document.getElementById("chatInput"), text = input.value.trim(); if(!text) return;
+            if(!window.userPrefs) return alert("Auth Missing.");
+
+            appendMsg(text, "user"); input.value = ""; 
+            appendMsg("<div class='typing-indicator'><span></span><span></span><span></span></div>", "bot");
+            
+            fetch('/chat', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ 
+                    message: text, 
+                    context: lastCityContext,
+                    is_voice: false,
+                    lang: window.userPrefs.lang || 'en',
+                    user_type: window.userPrefs.type || 'general',
+                    gemini_key: window.userPrefs.gemini_key || ''
+                }) 
+            }).then(r=>r.json()).then(data => {
+                let box = document.getElementById("chatBox"); box.removeChild(box.lastChild); 
+                
+                // Specific Quota Error Interception
+                if (data.reply && (data.reply.includes("429") || data.reply.includes("Quota"))) {
+                    showToast("System Gemini API is out of Quota. Please add your own Key in Settings.", "warning");
+                    appendMsg("⚠️ AI Quota Reached. Please use your personal API Key in Settings to continue.", "bot", true);
+                } else {
+                    appendMsg(data.reply, "bot", true);
+                }
+            }).catch(e => { 
+                let box = document.getElementById("chatBox"); box.removeChild(box.lastChild); 
+                showToast("Gemini connection error.", "error"); 
+            });
+        };
+
+        // --- INTERACTIVE NEXUS ENGINE --- //
+        
+        // 1. Environmental Particle System
+        class NexusParticles {
+            constructor() {
+                this.canvas = document.getElementById('nexusParticles');
+                if(!this.canvas) return;
+                this.ctx = this.canvas.getContext('2d');
+                if(!this.ctx) return;
+                this.particles = [];
+                this.mode = 'idle'; // clear, rainy, snowy, storm
+                window.addEventListener('resize', () => this.resize());
+                this.resize();
+                this.animate();
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            setMode(category) {
+                this.mode = category;
+                this.particles = [];
+                const count = category === 'idle' ? 30 : 100;
+                for(let i=0; i<count; i++) this.particles.push(this.createParticle());
+            }
+
+            createParticle() {
+                const isRain = this.mode === 'rainy' || this.mode === 'storm';
+                const isSnow = this.mode === 'snowy';
+                return {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    size: isSnow ? Math.random() * 4 + 1 : (isRain ? Math.random() * 2 + 1 : Math.random() * 2),
+                    speedY: isRain ? Math.random() * 10 + 10 : (isSnow ? Math.random() * 1 + 1 : Math.random() * 0.5 + 0.2),
+                    speedX: isRain ? (Math.random() - 0.5) * 2 : (Math.random() - 0.5) * 1,
+                    opacity: Math.random() * 0.5 + 0.1
+                };
+            }
+
+            update() {
+                this.particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    if(p.y > this.canvas.height) { p.y = -10; p.x = Math.random() * this.canvas.width; }
+                    if(p.x > this.canvas.width) p.x = 0;
+                    if(p.x < 0) p.x = this.canvas.width;
+                });
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.particles.forEach(p => {
+                    this.ctx.beginPath();
+                    this.ctx.fillStyle = this.mode === 'rainy' ? '#3b82f6' : (this.mode === 'snowy' ? '#ffffff' : '#06b6d4');
+                    this.ctx.globalAlpha = p.opacity;
+                    if(this.mode === 'rainy' || this.mode === 'storm') {
+                        this.ctx.rect(p.x, p.y, p.size / 2, p.size * 5);
+                    } else {
+                        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    }
+                    this.ctx.fill();
+                });
+            }
+
+            animate() {
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        const engine = new NexusParticles();
+        engine.setMode('idle');
+
+        // 2. 3D Spatial Tilt (Parallax)
+        document.addEventListener('mousemove', (e) => {
+            if (activeSection !== 'dashboard') return;
+            const widgets = document.querySelectorAll('.widget');
+            const x = (window.innerWidth / 2 - e.pageX) / 45;
+            const y = (window.innerHeight / 2 - e.pageY) / 45;
+
+            widgets.forEach(w => {
+                w.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+            });
+        });
+
+        // 3. Environmental Pulse Sidebar Logic
+        const sidebar = document.getElementById('pulseSidebar');
+        const toggle = document.getElementById('pulseToggle');
+        
+        toggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+
+        function syncGlobalPulse(data, city) {
+            const risk = document.getElementById('sidebarRisk');
+            const verdict = document.getElementById('sidebarVerdict');
+            const insights = document.getElementById('sidebarInsights');
+
+            risk.innerText = (data.risk_score || 0) + "%";
+            verdict.innerText = data.ai;
+            verdict.style.color = (data.risk_score || 0) > 60 ? 'var(--danger)' : 'var(--success)';
+
+            insights.innerHTML = data.tips.map(t => `<div class="pulse-insight">${t}</div>`).join('');
+            
+            // Auto-open sidebar briefly on search to show relevance
+            sidebar.classList.add('active');
+            setTimeout(() => sidebar.classList.remove('active'), 5000);
+            
+            // Update Particle Engine
+            if(data.condition_category) engine.setMode(data.condition_category);
+        }
+
+        document.getElementById('btnSendChat').addEventListener('click', handleChatSend);
+        document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleChatSend(); });
+
+        // Initialize Modern Canvas Visualizer
+        const canvas = document.getElementById("voiceCanvas");
+        const ctx = canvas.getContext("2d");
+        const voiceUI = document.getElementById('voiceUI');
+        let audioContext, analyser, dataArray;
+        let visualizerStarted = false;
+        let currentVoiceAmplitude = 0; // Global for sync
+
+        function startVisualizer() {
+            if(visualizerStarted) return;
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 256;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                visualizerStarted = true;
+                animateCanvas();
+            }).catch(e => console.error("Mic access denied for visualizer", e));
+        }
+
+        function drawWave(amplitude = 10) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const radius = 70;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Draw multiple semi-transparent rings for depth
+            for(let layer = 0; layer < 3; layer++) {
+                ctx.beginPath();
+                ctx.strokeStyle = layer === 0 ? "#3b82f6" : layer === 1 ? "#06b6d4" : "#f472b6";
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.3 + (layer * 0.2);
+                ctx.shadowBlur = layer === 0 ? 15 : 5;
+                ctx.shadowColor = ctx.strokeStyle;
+
+                for (let i = 0; i < 360; i++) {
+                    let angle = (i * Math.PI) / 180;
+                    
+                    // Combine idle wave with reactive amplitude
+                    let waveFactor = Math.sin(i * 0.1 + Date.now() * (0.005 + layer * 0.001)) * amplitude;
+                    let wave = radius + waveFactor + (layer * 10);
+
+                    let x = centerX + wave * Math.cos(angle);
+                    let y = centerY + wave * Math.sin(angle);
+
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function startWaveSync(audio) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const analyser = audioCtx.createAnalyser();
+            const source = audioCtx.createMediaElementSource(audio);
+            
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            
+            analyser.fftSize = 128;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function update() {
+                if (audio.paused) {
+                    currentVoiceAmplitude = 0;
+                    return;
+                }
+                analyser.getByteFrequencyData(dataArray);
+                let avg = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+                currentVoiceAmplitude = avg / 2.5; // Scale for visual impact
+                requestAnimationFrame(update);
+            }
+            update();
+        }
+
+        function animateCanvas() {
+            let amp = 8; // Idle base amplitude
+            
+            if (analyser && isRecording) {
+                analyser.getByteFrequencyData(dataArray);
+                let avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+                amp += (avg / 2); 
+            }
+
+            // Sync with ElevenLabs audio amplitude
+            amp += currentVoiceAmplitude;
+
+            // Boost based on state
+            if (voiceUI.classList.contains("listening")) amp += 10;
+            if (voiceUI.classList.contains("speaking")) amp += 10;
+
+            drawWave(amp);
+            requestAnimationFrame(animateCanvas);
+        }
+        
+        // Start animate loop immediately for idle state
+        animateCanvas();
+
+        // Voice Assistant
+        let recognition = null, isRecording = false;
+        // lastVoiceQuery already declared above in State Tracking section
+        const voiceUI_ref = document.getElementById('voiceUI'); // Helper for recognition context
+
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRec = window.webkitSpeechRecognition || window.SpeechRecognition;
+            recognition = new SpeechRec(); 
+            recognition.continuous = false; 
+            recognition.interimResults = false; 
+            recognition.lang = 'en-US';
+
+            recognition.onstart = function() { 
+                isRecording = true; 
+                voiceUI.classList.add('listening');
+                voiceUI.classList.remove('speaking');
+                
+                // --- Listening Mode Pitch ---
+                const lang = window.userPrefs?.lang || 'en';
+                const t = translations[lang] || translations.en;
+                document.getElementById('voiceStatus').innerText = t.voice_listening; 
+                startVisualizer();
+            };
+
+            recognition.onresult = function(event) { 
+                let transcript = event.results[0][0].transcript; 
+                document.getElementById('voiceStatus').innerText = "Command: " + transcript; 
+                processVoiceCommand(transcript); 
+            };
+
+            recognition.onerror = function(event) { 
+                document.getElementById('voiceStatus').innerText = "Microphone error."; 
+                stopRecordingUI(); 
+            };
+
+            recognition.onend = function() { 
+                stopRecordingUI(); 
+            };
+        }
+
+        document.getElementById('assistantOrb').addEventListener('click', () => {
+            if(!recognition) return alert("Speech Recognition not supported in this browser."); 
+            
+            // Set recognition language based on system preference
+            const currentLang = window.userPrefs?.lang || 'en';
+            const langMap = { 'en': 'en-US', 'hi': 'hi-IN', 'te': 'te-IN' };
+            recognition.lang = langMap[currentLang] || 'en-US';
+
+            startVisualizer(); 
+            if(isRecording) recognition.stop(); else recognition.start();
+        });
+
+        function stopRecordingUI() { 
+            isRecording = false; 
+            voiceUI.classList.remove('listening'); 
+            if(document.getElementById('voiceStatus').innerText === "Assistant is listening...") {
+                document.getElementById('voiceStatus').innerText = ""; 
+            }
+        }
+
+        function processVoiceCommand(text) {
+            if(!window.userPrefs) return alert("Auth Missing.");
+            document.getElementById('voiceAiText').innerHTML = "<div class='typing-indicator' style='justify-content:center;'><span></span><span></span><span></span></div>";
+            
+            voiceUI.classList.add('speaking');
+            
+            fetch('/chat', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ 
+                    message: text, 
+                    context: lastCityContext || "general weather intelligence", 
+                    is_voice: true,
+                    lang: window.userPrefs.lang || 'en',
+                    user_type: window.userPrefs.type || 'general',
+                    previous: lastVoiceQuery,
+                    gemini_key: window.userPrefs.gemini_key || ''
+                }) 
+            }).then(r=>r.json()).then(data => {
+                let reply = data.reply; 
+                
+                // --- Signature Feature (UNIQUE) ---
+                const signatures = [
+                    "That’s something to keep in mind today.",
+                    "It’s a good idea to plan accordingly.",
+                    "Just a small precaution would help.",
+                    "Hope that helps with your plans."
+                ];
+                const randomSig = signatures[Math.floor(Math.random() * signatures.length)];
+                
+                // Don't add signature to error messages
+                if (!reply.includes("Quota") && !reply.includes("429")) {
+                    reply = `${reply} ${randomSig}`;
+                }
+                
+                if (reply && (reply.includes("429") || reply.includes("Quota"))) {
+                    showToast("Voice AI Quota Reached. Please add your own Key in Settings.", "warning");
+                    reply = "I'm sorry, my daily quota has been reached. Please add your personal Gemini API key in the settings to continue our conversation.";
+                }
+
+                typeWriterHTML(document.getElementById('voiceAiText'), reply, 25);
+
+                lastVoiceQuery = text;
+                
+                if (data.audio) {
+                    const audio = new Audio(data.audio);
+                    audio.crossOrigin = "anonymous";
+                    audio.play().catch(e => {
+                        console.warn("Autoplay blocked, clicking orb will resume sync.");
+                        showToast("Autoplay blocked. Tap to hear AI.", "info");
+                    });
+                    
+                    audio.onplay = () => {
+                        voiceUI.classList.add('speaking');
+                        startWaveSync(audio);
+                    };
+                    
+                    audio.onended = () => {
+                        voiceUI.classList.remove('speaking');
+                        currentVoiceAmplitude = 0;
+                    };
+                } else {
+                    // Fallback to browser TTS if ElevenLabs fails
+                    setTimeout(() => speak(reply), 300);
+                }
+            }).catch(e => { 
+                voiceUI.classList.remove('speaking');
+                document.getElementById('voiceAiText').innerText = "Vocal generation failed."; 
+            });
+        }
+
+        function speak(text) {
+            if(!('speechSynthesis' in window)) return; 
+            window.speechSynthesis.cancel();
+            
+            // --- Speech Formatting Layer (Natural Pauses) ---
+            let cleanText = text
+                .replace(/\n/g, ". ")
+                .replace(/,/g, ", ")
+                .replace(/\s+/g, " ")
+                .replace(/\./g, ". ")   // Pause for periods
+                .replace(/ and /g, " ... and "); // Natural human pause
+
+            let msg = new SpeechSynthesisUtterance(cleanText); 
+            
+            // --- Voice Behavior Modes (Dynamic Personality) ---
+            let isWarning = text.toLowerCase().includes("risk") || 
+                            text.toLowerCase().includes("danger") || 
+                            text.toLowerCase().includes("caution") || 
+                            text.toLowerCase().includes("avoid");
+
+            if (isWarning) {
+                // Warning Mode: Slightly serious tone
+                msg.rate = 0.8;
+                msg.pitch = 1.05;
+            } else {
+                // Speaking Mode: Confident and clear
+                msg.rate = 0.85;
+                msg.pitch = 1.15;
+            }
+            msg.volume = 1;
+
+            // --- Voice Engine Configuration (Final Settings) ---
+            let voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                msg.voice =
+                  voices.find(v => v.name.includes("Google UK English Female")) ||
+                  voices.find(v => v.name.includes("Google US English")) ||
+                  voices.find(v => v.lang === "en-US") ||
+                  voices[0];
+            }
+            
+            msg.onstart = () => {
+                voiceUI.classList.add('speaking');
+                document.getElementById('voiceStatus').innerText = "Assistant is speaking...";
+            };
+
+            msg.onend = () => {
+                voiceUI.classList.remove('speaking');
+                document.getElementById('voiceStatus').innerText = "";
+            };
+
+            window.speechSynthesis.speak(msg);
+        }
+
+        // --- Autoplay Policy & Mic Unlock ---
+        document.body.addEventListener("click", () => {
+             const dummy = new Audio();
+             dummy.play().catch(()=>{});
+             if(!wakeWordRecognition) startWakeWordDetection();
+        }, { once: true });
+
+        // --- Multi-City Logic ---
+        function renderCityCards() {
+            const list = document.getElementById('cityList');
+            list.innerHTML = '';
+            window.userCities.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'city-mini-card';
+                card.innerHTML = `<strong>${c}</strong><br><small>View Data</small>`;
+                card.onclick = () => {
+                    document.getElementById('citySearch').value = c;
+                    document.getElementById('btnFetchWeather').click();
+                };
+                list.appendChild(card);
+            });
+        }
+
+        document.getElementById('btnAddCity').onclick = () => {
+            const city = document.getElementById('citySearch').value.trim();
+            if(!city || window.userCities.includes(city)) return;
+            window.userCities.push(city);
+            localStorage.setItem('weatherai_cities', JSON.stringify(window.userCities));
+            renderCityCards();
+            showToast(`Added ${city} to monitoring list.`, "success");
+        };
+
+        // --- Wake Word Engine (Hands-Free Mode) ---
+        let wakeWordRecognition;
+        function startWakeWordDetection() {
+            if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return;
+            const SpeechRec = window.webkitSpeechRecognition || window.SpeechRecognition;
+            wakeWordRecognition = new SpeechRec();
+            wakeWordRecognition.continuous = true;
+            wakeWordRecognition.lang = 'en-US';
+            wakeWordRecognition.onresult = (event) => {
+                const transcript = event.results[event.results.length-1][0].transcript.toLowerCase();
+                if(transcript.includes("hey weather") || transcript.includes("weather ai")) {
+                    showToast("Wake word detected! Listening...", "info");
+                    wakeWordRecognition.stop(); // Stop wake word to allow main assistant to listen
+                    document.getElementById('navVoice').click();
+                    setTimeout(() => {
+                         if(!isRecording) document.getElementById('assistantOrb').click();
+                    }, 800);
+                }
+            };
+            wakeWordRecognition.onerror = (e) => { 
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') return;
+            };
+            wakeWordRecognition.onend = () => { 
+                if (!isRecording) {
+                    try { wakeWordRecognition.start(); } catch(e){} 
+                } else {
+                    // If main assistant is recording, wait for it to finish before restarting wake word
+                    const checkInterval = setInterval(() => {
+                        if (!isRecording) {
+                            clearInterval(checkInterval);
+                            try { wakeWordRecognition.start(); } catch(e){}
+                        }
+                    }, 1000);
+                }
+            };
+            try { wakeWordRecognition.start(); } catch(e){}
+        }
+    </script>
+</body>
+</html>
